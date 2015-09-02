@@ -1,0 +1,398 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+	<meta charset="UTF-8" />
+	<title>OO JavaScript + HTML5 Canvas Demo</title>
+
+<style type="text/css">
+
+body {
+    font-family: sans-serif;
+    background-color: #444;
+	text-align: center;
+}
+
+h2 {
+    color: #e0e0e0;
+    font-size:18pt;
+    margin-top: 0px;
+    margin-bottom: 0px;
+    border: 0px solid blue;
+
+}
+
+canvas {
+	display: block;
+	position: relative;
+	border: 1px inset #555;
+	background-color: #000;
+	width: 80%;
+	height: 300px;
+	margin-top:10px;
+	margin-left:auto;
+	margin-right:auto;
+}
+
+#info { 
+	display: block;
+	position: relative;
+	border: 1px solid #bbb;
+	width: 300px;
+	height: 100px;
+	margin-top:0px;
+	margin-left:auto;
+	margin-right:auto;
+}
+
+</style>
+
+<script type="text/javascript" src="http://ajax.googleapis.com/ajax/libs/jquery/1.7.1/jquery.min.js"></script>
+
+<script type="text/javascript">
+
+const NUMSTARS = 150;		// -- # of stars
+
+const MINDELAY = 2;			// -- minimum delay before each star shifts
+const MAXDELAY = 10;		// -- maximum delay before each star shifts
+const MAXDELTA = 1;			// -- maximum possible rotation delta for each star
+
+const MINRADIUS = 10;		// -- minimum possible radius for each star
+var MAXRADIUS = 120;		// -- maximum possible radius for each star
+
+const MAXRADDELAY = 10;
+const VIEWANGLE = .3;		// -- amount y-axis is skewed
+const SHIFTINTERVAL = 10;	// -- milliseconds
+
+var arySine = new Array(360);
+var aryCos = new Array(360);
+var testindex = 0;
+
+// -- init sin/cos arrays
+for (i=1;i<=360;i++) {
+	arySine[i-1] = Math.sin( Math.abs( i % 360 ) * Math.PI / 180.0 );
+	aryCos[i-1] = Math.cos( Math.abs( i % 360 ) * Math.PI / 180.0 );
+}
+
+// -- Star constructor
+function Star(sf, x,y, r,g,b,a, delta, delay) {
+    
+	this.starfield = sf;
+
+	x = x==undefined?null:x;
+	y = y==undefined?null:y;
+
+	this.x = x==null?Math.floor(Math.random()*(sf.canvas.width+1)):x;
+	this.y = y==null?Math.floor(Math.random()*(sf.canvas.height+1)):y;
+
+	if (r == undefined || r == null) {
+		intColor = Math.floor(Math.random()*(200+1))+55;
+		//intColor = Math.floor((Math.random()* MAXRADIUS-this.rad)/MAXRADIUS *(55))+200;
+		this.r = this.g = this.b = intColor;
+		this.a = 255;	 
+	} else {
+		this.r = r;
+		this.g = g;
+		this.b = b;
+		this.a = a;
+	}
+
+	this.delta = delta==undefined?Math.floor(Math.random()*MAXDELTA)+1:delta;
+	this.delay = delay==undefined?Math.floor(Math.random()*(MAXDELAY-MINDELAY)):delay;
+	this.delaycount = 0;
+
+	this.hide = function() {
+		this.starfield.putPixel(this.x, this.y, 0,0,0, 255);
+	}
+
+	this.show = function() {
+		this.starfield.putPixel(this.x, this.y, this.r,this.g,this.b, this.a);
+	}
+
+	this.move = function() {
+		if (this.delaycount < this.delay) {
+			this.delaycount++;
+			return false;
+		} else {
+			this.delaycount = 0;
+		}
+
+		this.hide();
+
+		if (this.x >= this.starfield.canvas.width-1) {
+			this.x = 0;
+		} else {
+			this.x += this.delta;
+		}
+
+		this.show();
+
+		return true;
+	}
+
+}
+
+// -- Star constructor
+function RStar(sf, deg, rad, r,g,b,a, delta, delay) {
+
+	this.inheritFrom = Star;
+	this.inheritFrom(sf);
+
+	this.deg = deg==null?Math.floor(Math.random()*360)+1:deg;
+	this.rad = Math.floor(Math.random()*(MAXRADIUS-MINRADIUS) * (sf.aryStars.length-i)/sf.aryStars.length)+MINRADIUS
+
+	this.raddelay = Math.floor(Math.random()*MAXRADDELAY)+1;
+	this.raddelayindex = 0;
+
+	this.delta = delta==undefined?Math.floor(this.rad/MAXRADIUS*MAXDELTA)+1:delta;
+	this.delay = delay==undefined?MAXDELAY-Math.round(this.rad/MAXRADIUS * (MAXDELAY-MINDELAY+1)):delay;
+
+	this.hide = function() {
+		var x = this.starfield.canvas.width / 2 + Math.round(aryCos[this.deg-1]*this.rad);
+		var y = this.starfield.canvas.height / 2 + Math.round(arySine[this.deg-1]*this.rad * VIEWANGLE); 
+		this.starfield.putPixel(x, y, 0,0,0, 255);
+	}
+
+	this.show = function() {
+		var x = this.starfield.canvas.width / 2 + Math.round(aryCos[this.deg-1]*this.rad);
+		var y = this.starfield.canvas.height / 2 + Math.round(arySine[this.deg-1]*this.rad * VIEWANGLE); 
+		this.starfield.putPixel(x, y, this.r,this.g,this.b, this.a);
+	}
+
+	this.move = function() {
+
+		blnMove = false;
+
+		if (this.delaycount++ >= this.delay) {
+			this.delaycount = 0;
+			blnMove = true;
+		}
+/*
+		if (this.raddelayindex++ >= this.raddelay) {
+			this.raddelayindex = 0;
+			blnMove = true;
+		}
+*/
+		if (!blnMove) return false;
+
+		this.hide();
+
+//		this.rad = (this.rad+1) % MAXRADIUS;
+
+        if ((this.deg+=this.delta) > 360) {
+            this.deg = 1;
+        }
+
+        this.show();
+
+	return true;
+    }
+
+}
+
+// -- Starfield constructor
+function Starfield(id,numstars, startype)
+{
+
+	this.putImgData = function () {
+		this.context.putImageData(this.imgData, 0, 0);
+	}
+
+	this.getPixel = function(x,y) {
+
+		aryRGB = Array();
+		aryRGB[0] = this.imgData.data[((y*(this.imgData.width*4)) + (x*4)) + 0];
+		aryRGB[1] = this.imgData.data[((y*(this.imgData.width*4)) + (x*4)) + 1];
+		aryRGB[2] = this.imgData.data[((y*(this.imgData.width*4)) + (x*4)) + 2];
+
+		return aryRGB;
+
+	}
+
+	this.putPixel = function(x,y, r,g,b, a) {
+        
+		this.imgData.data[((y*(this.imgData.width*4)) + (x*4)) + 0] = r;
+		this.imgData.data[((y*(this.imgData.width*4)) + (x*4)) + 1] = g;
+		this.imgData.data[((y*(this.imgData.width*4)) + (x*4)) + 2] = b;
+
+		this.imgData.data[((y*(this.imgData.width*4)) + (x*4)) + 3] = a;  // -- alpha transparency
+
+	}
+
+	this.hide = function() {
+
+		for (i=0;i<this.aryStars.length;i++) {
+			this.aryStars[i].hide(this);
+		}
+
+		this.putImgData();
+
+	}
+
+	this.show = function() {
+
+		for (i=0;i<this.aryStars.length;i++) {
+			this.aryStars[i].show(this);
+		}
+
+		this.putImgData();
+
+	}
+
+    this.toggle = function(on) {
+
+        this.active = on;
+        starfield = this;
+
+        function animate() {
+
+            if ( starfield.active ) {
+                requestAnimationFrame(animate);
+            }
+
+            // -- render next frame of animation
+            for (i=0;i<starfield.aryStars.length;i++) {
+                starfield.aryStars[i].move();
+            }
+
+            starfield.putImgData();
+        }
+
+		// -- toggle animation on or off
+		if (on) {
+			animate();
+		}
+	}
+
+    this.initCanvas = function() {
+        this.canvas = document.getElementById(this.id);
+        // -- init context
+        if (this.canvas.getContext) {
+            this.context = this.canvas.getContext('2d');
+            this.imgData = this.context.getImageData(0, 0, this.canvas.width, this.canvas.height);
+        } else {
+            alert("canvas-unsupported");
+        }
+    }
+
+    // -- default to side scrolling
+	startype = startype==undefined?"Star":startype;
+
+    this.id = id;
+    this.active = true;
+
+    this.initCanvas();
+
+	MAXRADIUS = this.canvas.width / 2 * .90;
+
+	// -- initialize stars
+	this.aryStars = new Array(numstars);
+	for (i=0;i<this.aryStars.length;i++) {
+ 
+		eval("this.aryStars[i] = new "+startype+"(this);");
+
+	}
+
+}
+
+(function() {
+    var lastTime = 0;
+    var vendors = ['ms', 'moz', 'webkit', 'o'];
+    for(var x = 0; x < vendors.length && !window.requestAnimationFrame; ++x) {
+        window.requestAnimationFrame = window[vendors[x]+'RequestAnimationFrame'];
+        window.cancelAnimationFrame = window[vendors[x]+'CancelAnimationFrame'] 
+                                   || window[vendors[x]+'CancelRequestAnimationFrame'];
+    }
+ 
+    if (!window.requestAnimationFrame)
+        window.requestAnimationFrame = function(callback, element) {
+            var currTime = new Date().getTime();
+            var timeToCall = Math.max(0, 16 - (currTime - lastTime));
+            var id = window.setTimeout(function() { callback(currTime + timeToCall); }, 
+              timeToCall);
+            lastTime = currTime + timeToCall;
+            return id;
+        };
+ 
+    if (!window.cancelAnimationFrame)
+        window.cancelAnimationFrame = function(id) {
+            clearTimeout(id);
+        };
+}());
+
+// -- toggle animation type
+function toggleType() {
+
+	btnToggle = document.getElementById("btnToggleType");
+
+    window.objStarfield.toggle(false);
+	window.objStarfield.hide();	
+
+	if (btnToggle.value == "Spiral") {
+		// -- generate a radial star field
+		window.objStarfield = new Starfield("starfield", NUMSTARS, "RStar");
+		btnToggle.value = "Horiz";
+	} else {
+		// -- generate a normal side scrolling star field
+		window.objStarfield = new Starfield("starfield", NUMSTARS, "Star");
+		btnToggle.value = "Spiral";
+	}
+
+	toggleStars(true);
+}
+
+
+// -- stop/start animation
+function toggleStars(blnOn) {
+
+	btnToggle = document.getElementById("btnToggleOnOff");
+
+	blnOn = blnOn == undefined ? btnToggle.value=="Start" : blnOn;
+
+	window.objStarfield.toggle(blnOn);
+	btnToggle.value = blnOn?"Stop":"Start"; 
+}
+
+
+</script>
+</head>
+
+<body>
+
+<h2>HTML5 Canvas + OO JavaScript Demo</h2>
+
+<canvas id="starfield" width="1000">
+    This browser does not support the canvas element.
+</canvas>
+
+<script type="text/javascript">
+
+var objStarfield = new Starfield("starfield", NUMSTARS);
+objStarfield.toggle(true);
+
+$(document).ready(function(){
+
+/*    $(window).resize(function() {
+//      $('#info').html('Width: '+$(window).width());
+//      $('#starfield').attr("width", $(window).width() * .4);
+        objStarfield.initCanvas();
+    });
+*/
+//    $('#starfield').width($(window).width() * .8);
+});
+
+
+
+</script>
+
+<br />
+
+<form>
+<input id="btnToggleOnOff" type="button" onclick="toggleStars();" value="Stop" />
+<input id="btnToggleType" type="button" onclick="toggleType();" value="Spiral" />
+</form>
+
+<!-- <div id="info"></div> -->
+
+</body>
+</html>
