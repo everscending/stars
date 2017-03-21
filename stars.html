@@ -137,18 +137,16 @@ class Star {
 class RStar extends Star {
 
 	constructor(sf, deg, rad, r,g,b,a, delta, delay) {
-
 		super(sf);
 
 		this.deg = deg==null?Math.floor(Math.random()*360)+1:deg;
-		this.rad = Math.floor(Math.random()*(MAXRADIUS-MINRADIUS) * (sf.aryStars.length-i)/sf.aryStars.length)+MINRADIUS
+		this.rad = Math.floor(Math.random()*(MAXRADIUS-MINRADIUS) * (sf.numstars-sf.aryStars.length)/sf.numstars)+MINRADIUS
 
 		this.raddelay = Math.floor(Math.random()*MAXRADDELAY)+1;
 		this.raddelayindex = 0;
 
 		this.delta = delta==undefined?Math.floor(this.rad/MAXRADIUS*MAXDELTA)+1:delta;
 		this.delay = delay==undefined?MAXDELAY-Math.round(this.rad/MAXRADIUS * (MAXDELAY-MINDELAY+1)):delay;
-
 	}
 
 	hide() {
@@ -164,7 +162,6 @@ class RStar extends Star {
 	}
 
 	move() {
-
 		var blnMove = false;
 
 		if (this.delaycount++ >= this.delay) {
@@ -188,7 +185,7 @@ class RStar extends Star {
 
         this.show();
 
-	return true;
+		return true;
     }
 
 }
@@ -200,17 +197,18 @@ class Starfield {
 
 	    this.id = id;
 	    this.active = true;
-
+	    this.numstars = numstars;
 	    this.initCanvas();
 
 		MAXRADIUS = this.canvas.width / 2 * .90;
 
 		// -- initialize stars
-		this.aryStars = new Array(numstars);
-		for (i=0;i<this.aryStars.length;i++) {
-			this.aryStars[i] = new startype(this);
+		this.aryStars = [];
+		for (i=0;i<numstars;i++) {
+			this.aryStars.push(new startype(this));
 		}
 
+		this.animate = this.animate.bind(this);
 	}
 
 	putImgData() {
@@ -233,45 +231,38 @@ class Starfield {
 	}
 
 	hide() {
-		for (i=0;i<this.aryStars.length;i++) {
-			this.aryStars[i].hide(this);
+		for (let star of this.aryStars) {
+			star.hide(this);
 		}
 		this.putImgData();
 	}
 
 	show() {
-
-		for (i=0;i<this.aryStars.length;i++) {
-			this.aryStars[i].show(this);
+        for (let star of this.aryStars) {
+			star.show(this);
 		}
-
 		this.putImgData();
-
 	}
 
-    toggle(on) {
+	animate() {
+		if ( this.active ) {
 
-        this.active = on;
-        var starfield = this;
+			// -- schedule rendering of next frame
+            requestAnimationFrame(this.animate);
 
-        function animate() {
-
-            if ( starfield.active ) {
-                requestAnimationFrame(animate);
+            // -- render this frame of animation
+            for (let star of this.aryStars) {
+                star.move();
             }
 
-            // -- render next frame of animation
-            for (i=0;i<starfield.aryStars.length;i++) {
-                starfield.aryStars[i].move();
-            }
-
-            starfield.putImgData();
+            this.putImgData();
         }
+	}
 
-		// -- toggle animation on or off
-		if (on) {
-			animate();
-		}
+	// -- toggle animation on or off
+    toggle(on) {
+        this.active = on;
+		this.animate();
 	}
 
     initCanvas() {
@@ -287,6 +278,7 @@ class Starfield {
 
 }
 
+// -- setup requestAnimationFrame function
 (function() {
     var lastTime = 0;
     var vendors = ['ms', 'moz', 'webkit', 'o'];
@@ -359,21 +351,8 @@ function toggleStars(blnOn) {
 
 <script type="text/javascript">
 
-var objStarfield = new Starfield("starfield", NUMSTARS);
+var objStarfield = new Starfield("starfield", 50, RStar);
 objStarfield.toggle(true);
-
-$(document).ready(function(){
-
-/*    $(window).resize(function() {
-//      $('#info').html('Width: '+$(window).width());
-//      $('#starfield').attr("width", $(window).width() * .4);
-        objStarfield.initCanvas();
-    });
-*/
-//    $('#starfield').width($(window).width() * .8);
-});
-
-
 
 </script>
 
